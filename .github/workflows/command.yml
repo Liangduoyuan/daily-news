@@ -1,0 +1,38 @@
+# 每 5 分钟检查一次 Telegram；收到「新闻」就立刻回一份简报
+name: daily-news-command
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# 同一时间只跑一个，避免两次轮询抢同一条消息
+concurrency:
+  group: news-command
+  cancel-in-progress: false
+
+jobs:
+  poll:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Poll Telegram for the trigger word
+        env:
+          NEWS_TELEGRAM_TOKEN: ${{ secrets.NEWS_TELEGRAM_TOKEN }}
+          NEWS_TELEGRAM_CHAT_ID: ${{ secrets.NEWS_TELEGRAM_CHAT_ID }}
+          NEWS_LLM_KEY: ${{ secrets.NEWS_LLM_KEY }}
+          NEWS_LLM_BASE: ${{ vars.NEWS_LLM_BASE || 'https://api.deepseek.com' }}
+          NEWS_LLM_MODEL: ${{ vars.NEWS_LLM_MODEL || 'deepseek-chat' }}
+          NEWS_TZ: Asia/Shanghai
+          NEWS_DOMESTIC: '5'
+          NEWS_INTERNATIONAL: '10'
+        run: node command.mjs

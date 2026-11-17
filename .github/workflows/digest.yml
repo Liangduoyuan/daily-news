@@ -1,0 +1,41 @@
+# 每天 08:00 / 20:00（Asia/Shanghai）推一份中英双语简报
+name: daily-news-digest
+
+on:
+  schedule:
+    # GitHub 的 cron 一律按 UTC。00:00 UTC = 08:00 北京时间，12:00 UTC = 20:00 北京时间
+    - cron: '0 0 * * *'
+    - cron: '0 12 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: news-digest
+  cancel-in-progress: false
+
+jobs:
+  push:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # 零第三方依赖，不需要 npm install
+      - name: Generate and push digest
+        env:
+          NEWS_CHANNEL: telegram
+          NEWS_TELEGRAM_TOKEN: ${{ secrets.NEWS_TELEGRAM_TOKEN }}
+          NEWS_TELEGRAM_CHAT_ID: ${{ secrets.NEWS_TELEGRAM_CHAT_ID }}
+          NEWS_LLM_KEY: ${{ secrets.NEWS_LLM_KEY }}
+          NEWS_LLM_BASE: ${{ vars.NEWS_LLM_BASE || 'https://api.deepseek.com' }}
+          NEWS_LLM_MODEL: ${{ vars.NEWS_LLM_MODEL || 'deepseek-chat' }}
+          NEWS_TZ: Asia/Shanghai
+          NEWS_DOMESTIC: '5'
+          NEWS_INTERNATIONAL: '10'
+        run: node run.mjs

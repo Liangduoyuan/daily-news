@@ -1,0 +1,8 @@
+# 真实密钥只放在 GitHub Secrets 里，永远不要提交
+.env
+
+# 常驻模式（daemon.mjs）的已推记录
+.state.json
+
+node_modules/
+*.log
